@@ -69,11 +69,11 @@ def write_label_and_prediction_files(
 
 if __name__ == "__main__":
     from importlib import import_module
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
-    fast_mod = import_module("02b_features_fast")
-    elig_mod = import_module("08_eligibility_tagging")
-    xgb_mod = import_module("04_xgboost_main")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
+    fast_mod = import_module("features_fast")
+    elig_mod = import_module("eligibility_tagging")
+    xgb_mod = import_module("xgboost_main")
 
     # Full data pipeline execution
     df = eda.load_all_patients(eda.DATA_DIRS)
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     # Predict on unseen test set
     test_probs = model.predict_proba(test_df[feature_cols])[:, 1]
 
-    # THRESHOLD = 0.80, chosen via threshold sweep in 06_threshold_leadtime.py.
+    # THRESHOLD = 0.80, chosen via threshold sweep in threshold_leadtime.py.
     # It balances early warning rewards against false alarm penalties perfectly.
     write_label_and_prediction_files(
         test_df_with_meta=test_df[["patient_id", "ICULOS", "label"]],

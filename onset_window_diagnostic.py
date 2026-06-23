@@ -14,7 +14,7 @@ to ensure our final evaluations are honest.
 from importlib import import_module
 import pandas as pd
 
-eda = import_module("01_eda")
+eda = import_module("eda")
 
 # The window size used across the project
 WINDOW = 6

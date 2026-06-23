@@ -98,11 +98,11 @@ def hospital_subgroup_lead_time(df_with_preds, prob_col, threshold,
 
 if __name__ == "__main__":
     from importlib import import_module
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
-    fast_mod = import_module("02b_features_fast")
-    elig_mod = import_module("08_eligibility_tagging")
-    xgb_mod = import_module("04_xgboost_main")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
+    fast_mod = import_module("features_fast")
+    elig_mod = import_module("eligibility_tagging")
+    xgb_mod = import_module("xgboost_main")
 
     # Execute data pipeline
     df = eda.load_all_patients(eda.DATA_DIRS)

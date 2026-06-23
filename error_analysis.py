@@ -157,11 +157,11 @@ def print_patient_trajectory(pid, raw_df, vitals=("HR", "Resp", "MAP", "SBP"), l
 
 if __name__ == "__main__":
     from importlib import import_module
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
-    fast_mod = import_module("02b_features_fast")
-    elig_mod = import_module("08_eligibility_tagging")
-    xgb_mod = import_module("04_xgboost_main")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
+    fast_mod = import_module("features_fast")
+    elig_mod = import_module("eligibility_tagging")
+    xgb_mod = import_module("xgboost_main")
 
     # Pipeline execution
     df = eda.load_all_patients(eda.DATA_DIRS)

@@ -69,8 +69,8 @@ def train_xgb(train_df, val_df, feature_cols, random_state=42):
 
 if __name__ == "__main__":
     from importlib import import_module
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
 
     # Load and prep data
     df = eda.load_all_patients(eda.DATA_DIRS)

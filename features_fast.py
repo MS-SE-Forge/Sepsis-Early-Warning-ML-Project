@@ -1,5 +1,5 @@
 """
-Vectorized replacement for build_windowed_features in 02_features_split.py.
+Vectorized replacement for build_windowed_features in features_split.py.
 
 WHY THIS EXISTS: the original implementation loops in pure Python over
 every (patient, hour) pair individually - about 1.5 million iterations,
@@ -143,8 +143,8 @@ def build_windowed_features_fast(df, vitals, labs, demographics, window=WINDOW):
 if __name__ == "__main__":
     import time
     from importlib import import_module
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
 
     print("Loading data...")
     t0 = time.time()

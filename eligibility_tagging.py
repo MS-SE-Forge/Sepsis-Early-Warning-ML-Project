@@ -1,7 +1,7 @@
 """
 Section: Methodology - Early-Warning Eligibility Tagging
 
-Following the diagnostic in 07_onset_window_diagnostic.py, we found that
+Following the diagnostic in onset_window_diagnostic.py, we found that
 ~25% of septic patients have onset within the first WINDOW hours of their
 ICU stay. This means they cannot logically contribute a genuine pre-onset 
 "early warning" training/evaluation example.
@@ -22,7 +22,7 @@ dataframe, allowing us to report metrics overall AND stratified by group.
 import pandas as pd
 import numpy as np
 
-WINDOW = 6  # must match the window used in 02_features_split.py
+WINDOW = 6  # must match the window used in features_split.py
 
 def tag_patient_eligibility(df, window=WINDOW):
     """
@@ -83,9 +83,9 @@ def attach_eligibility(feature_df, eligibility_df):
 
 if __name__ == "__main__":
     from importlib import import_module
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
-    fast_mod = import_module("02b_features_fast")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
+    fast_mod = import_module("features_fast")
 
     # Load raw data and tag it immediately
     df = eda.load_all_patients(eda.DATA_DIRS)

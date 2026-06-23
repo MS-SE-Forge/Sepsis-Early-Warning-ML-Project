@@ -84,8 +84,8 @@ def train_logistic_baseline(train_df, val_df, feature_cols):
 
 if __name__ == "__main__":
     from importlib import import_module
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
 
     # Standard data loading pipeline
     df = eda.load_all_patients(eda.DATA_DIRS)

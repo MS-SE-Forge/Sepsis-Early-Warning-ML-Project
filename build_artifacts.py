@@ -28,14 +28,14 @@ os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
 def main():
     # Import all modular scripts dynamically
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
-    fast_mod = import_module("02b_features_fast")
-    elig_mod = import_module("08_eligibility_tagging")
-    xgb_mod = import_module("04_xgboost_main")
-    strat_mod = import_module("09_stratified_evaluation")
-    hosp_mod = import_module("10_hospital_subgroup")
-    err_mod = import_module("11_error_analysis")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
+    fast_mod = import_module("features_fast")
+    elig_mod = import_module("eligibility_tagging")
+    xgb_mod = import_module("xgboost_main")
+    strat_mod = import_module("stratified_evaluation")
+    hosp_mod = import_module("hospital_subgroup")
+    err_mod = import_module("error_analysis")
 
     # Step 1: Load and tag raw data
     print("Loading data...")

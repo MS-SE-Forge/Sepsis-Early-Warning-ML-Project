@@ -25,16 +25,16 @@ We use the **PhysioNet / Computing in Cardiology Challenge 2019** dataset.
 
 ## Pipeline Execution
 
-The project is structured as a sequential pipeline. While you can run individual scripts (`01_eda.py`, `02_features_split.py`, etc.) for debugging, the easiest way to reproduce the entire project end-to-end is via the master build script:
+The project is structured as a sequential pipeline. While you can run individual scripts (`eda.py`, `features_split.py`, etc.) for debugging, the easiest way to reproduce the entire project end-to-end is via the master build script:
 
 ```bash
-python 12_build_artifacts.py
+python build_artifacts.py
 ```
 
 This will:
 1. Load and clean the dataset.
 2. Add missingness indicators and forward-fill vitals/labs.
-3. Extract 6-hour sliding window features using `02b_features_fast.py` (the vectorized feature builder).
+3. Extract 6-hour sliding window features using `features_fast.py` (the vectorized feature builder).
 4. Apply a patient-level `GroupShuffleSplit` to prevent leakage.
 5. Train the primary XGBoost model, handling class imbalance natively.
 6. Compute validation metrics (including the utility proxy and lead-time analysis).

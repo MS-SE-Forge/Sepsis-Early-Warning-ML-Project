@@ -175,7 +175,7 @@ def patient_level_split(feature_df, test_size=0.2, val_size=0.1, random_state=42
 
 if __name__ == "__main__":
     from importlib import import_module
-    eda = import_module("01_eda")
+    eda = import_module("eda")
     
     # Test the logic on a single dataset folder
     df = eda.load_all_patients(eda.DATA_DIRS)

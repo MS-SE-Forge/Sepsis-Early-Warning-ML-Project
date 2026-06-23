@@ -8,21 +8,21 @@ Welcome to the Early Sepsis Warning project. This document outlines the architec
 
 The project is structured as a sequential pipeline, explicitly numbered from `01` to `12`. This modular approach ensures that each script has a single responsibility.
 
-1. **Ingestion & EDA (`01_eda.py`, `07_onset_window_diagnostic.py`)**: 
+1. **Ingestion & EDA (`eda.py`, `onset_window_diagnostic.py`)**: 
    - Loads the raw `.psv` files.
    - Calculates baseline statistics (missingness, label balance).
-2. **Feature Engineering & Leakage Prevention (`02_features_split.py`, `02b_features_fast.py`, `08_eligibility_tagging.py`)**:
+2. **Feature Engineering & Leakage Prevention (`features_split.py`, `features_fast.py`, `eligibility_tagging.py`)**:
    - Imputes missing data using clinical logic.
    - Extracts 6-hour rolling window features (means, slopes).
    - Segregates patients by eligibility (can they even be caught early?).
    - Performs a strict patient-level Train/Val/Test split.
-3. **Modeling (`03_baselines.py`, `04_xgboost_main.py`)**:
+3. **Modeling (`baselines.py`, `xgboost_main.py`)**:
    - Trains the primary XGBoost classifier, optimized for `aucpr` to handle extreme class imbalance.
 4. **Evaluation & Clinical Utility (`05`, `06`, `09`, `10`, `11`)**:
    - Sweeps for the optimal probability threshold based on an *approximate utility score* (rewarding lead time, penalizing false alarms).
    - Stratifies results by hospital and patient subgroup.
    - Extracts specific error analysis examples (Success, Miss, False Alarm).
-5. **Orchestration & Reporting (`12_build_artifacts.py`, `build_notebook.py`)**:
+5. **Orchestration & Reporting (`build_artifacts.py`, `build_notebook.py`)**:
    - The master script (`12`) runs everything end-to-end and saves the model and metric tables to an `artifacts/` directory.
    - The report builder takes those static artifacts and builds `sepsis_early_warning.ipynb` for instant analysis without slow retraining.
 
@@ -55,11 +55,11 @@ The project is structured as a sequential pipeline, explicitly numbered from `01
 *   **The Why**: In a hospital, data is not "Missing at Random". The very act of a doctor *ordering* a specific lab means they suspect something is wrong. The absence or presence of a measurement is a predictive feature in itself.
 
 ### F. Robustness & Distribution Shift (Hospital A vs. Hospital B)
-*   **The Decision**: We explicitly evaluate the model's performance stratified by hospital source (`10_hospital_subgroup.py`).
+*   **The Decision**: We explicitly evaluate the model's performance stratified by hospital source (`hospital_subgroup.py`).
 *   **The Why**: Evaluating robustness against **distribution shift** is critical. A model that memorizes the clinical protocols of Hospital A might fail catastrophically at Hospital B. By evaluating subgroups separately, we ensure that our model generalizes across different healthcare systems, not just a single dataset.
 
 ### G. Artifact Pre-computation Strategy
-*   **The Decision**: We decoupled the heavy training pipeline (`12_build_artifacts.py`) from the reporting layer (`build_notebook.py`).
+*   **The Decision**: We decoupled the heavy training pipeline (`build_artifacts.py`) from the reporting layer (`build_notebook.py`).
 *   **The Why**: Training an XGBoost model on 1.5 million rows takes several minutes. By saving the model, predictions, and a small subset of "demo patients" to the `artifacts/` folder, the Jupyter notebook analysis loads and predicts instantly.
 
 ---

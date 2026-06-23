@@ -105,11 +105,11 @@ def stratified_lead_time(df_with_preds, prob_col, threshold, label_col="label"):
 
 if __name__ == "__main__":
     from importlib import import_module
-    eda = import_module("01_eda")
-    feat_mod = import_module("02_features_split")
-    fast_mod = import_module("02b_features_fast")
-    elig_mod = import_module("08_eligibility_tagging")
-    xgb_mod = import_module("04_xgboost_main")
+    eda = import_module("eda")
+    feat_mod = import_module("features_split")
+    fast_mod = import_module("features_fast")
+    elig_mod = import_module("eligibility_tagging")
+    xgb_mod = import_module("xgboost_main")
 
     # Pipeline execution
     df = eda.load_all_patients(eda.DATA_DIRS)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     results = stratified_metrics(val_df, "pred_prob")
     print(results.to_string(index=False))
 
-    # Use the same threshold validated via utility sweep in 06_threshold_leadtime.py
+    # Use the same threshold validated via utility sweep in threshold_leadtime.py
     THRESHOLD = 0.80
     print("\n=== Stratified lead-time (validation set, threshold=0.80) ===")
     stratified_lead_time(val_df, "pred_prob", threshold=THRESHOLD)
