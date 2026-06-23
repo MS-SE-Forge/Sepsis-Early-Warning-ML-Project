@@ -64,6 +64,39 @@ def forward_fill_within_patient(df, cols):
         df[c] = df[c].fillna(df[c].median())
     return df
 
+def _extract_features_for_hour(pid, pdf, t, window):
+    """
+    Helper to extract features for a single hour by summarizing the past `window` hours.
+    Extracts latest value, mean, and trend (slope) for vitals; 
+    latest value and missingness rate for sparse labs.
+    """
+    # Extract the slice of the timeline for the current window (inclusive of current hour)
+    hist = pdf.iloc[t - window : t + 1]  
+    
+    # Initialize the feature dictionary for this specific hour T
+    row = {"patient_id": pid, "ICULOS": pdf.loc[t, "ICULOS"]}
+
+    # Calculate window statistics for highly dynamic Vital Signs
+    for v in VITALS:
+        vals = hist[v].values
+        row[f"{v}_last"] = vals[-1]                   # The most recent measurement
+        row[f"{v}_mean"] = np.mean(vals)              # The average over the window
+        # Calculate the linear trend (slope) using OLS to detect rising/falling vitals
+        row[f"{v}_slope"] = np.polyfit(range(len(vals)), vals, 1)[0] if len(vals) > 1 else 0.0
+
+    # Calculate window statistics for slower-moving Lab results
+    for lab in LABS:
+        row[f"{lab}_last"] = hist[lab].values[-1]     # The most recent lab value
+        row[f"{lab}_missing_rate"] = hist[f"{lab}_missing"].mean() # How frequently it was missing
+
+    # Demographics are static, so we just pull the current value
+    for d in DEMOGRAPHICS:
+        row[d] = pdf.loc[t, d]
+
+    row["hospital_source"] = pdf.loc[t, "hospital_source"]
+    row["label"] = pdf.loc[t, "SepsisLabel"]
+    return row
+
 def build_windowed_features(df, window=WINDOW):
     """
     For each (patient, hour T), build features summarizing the past `window`
@@ -92,32 +125,7 @@ def build_windowed_features(df, window=WINDOW):
         # We start at `window` because we need at least `window` hours of history 
         # to calculate meaningful rolling statistics.
         for t in range(window, n):  
-            # Extract the slice of the timeline for the current window (inclusive of current hour)
-            hist = pdf.iloc[t - window : t + 1]  
-            
-            # Initialize the feature dictionary for this specific hour T
-            row = {"patient_id": pid, "ICULOS": pdf.loc[t, "ICULOS"]}
-
-            # Calculate window statistics for highly dynamic Vital Signs
-            for v in VITALS:
-                vals = hist[v].values
-                row[f"{v}_last"] = vals[-1]                   # The most recent measurement
-                row[f"{v}_mean"] = np.mean(vals)              # The average over the window
-                # Calculate the linear trend (slope) to detect rising/falling vitals
-                row[f"{v}_slope"] = np.polyfit(range(len(vals)), vals, 1)[0] if len(vals) > 1 else 0.0
-
-            # Calculate window statistics for slower-moving Lab results
-            for lab in LABS:
-                row[f"{lab}_last"] = hist[lab].values[-1]     # The most recent lab value
-                row[f"{lab}_missing_rate"] = hist[f"{lab}_missing"].mean() # How frequently it was missing
-
-            # Demographics are static, so we just pull the current value
-            for d in DEMOGRAPHICS:
-                row[d] = pdf.loc[t, d]
-
-            row["hospital_source"] = pdf.loc[t, "hospital_source"]
-            row["label"] = pdf.loc[t, "SepsisLabel"]
-            
+            row = _extract_features_for_hour(pid, pdf, t, window)
             feature_rows.append(row)
 
     return pd.DataFrame(feature_rows)

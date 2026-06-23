@@ -158,7 +158,7 @@ def lead_time_report(test_df_meta, pred_probs, threshold):
     print(f"Septic patients MISSED (never flagged pre-onset): {missed}")
     
     if len(lead_times) > 0:
-        print(f"\nLead time (hours before onset), among CAUGHT patients only:")
+        print("\nLead time (hours before onset), among CAUGHT patients only:")
         print(lead_times.describe())
     else:
         print("\nNo patients caught at this threshold - try a lower threshold.")

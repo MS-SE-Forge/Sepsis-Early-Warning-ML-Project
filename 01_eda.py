@@ -125,7 +125,7 @@ def time_to_onset_stats(df):
         onset_hours.append(onset_row)
         
     onset_hours = pd.Series(onset_hours)
-    print(f"\nAmong septic patients, hour of sepsis onset (ICULOS at first label=1):")
+    print("\nAmong septic patients, hour of sepsis onset (ICULOS at first label=1):")
     print(onset_hours.describe())
     
     return onset_hours

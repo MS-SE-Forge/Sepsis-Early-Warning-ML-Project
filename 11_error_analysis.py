@@ -19,6 +19,82 @@ import pandas as pd
 # The optimal utility threshold selected in earlier steps
 THRESHOLD = 0.80  
 
+def _find_success_case(df):
+    """
+    Finds the median lead-time catch among early_warning_eligible patients.
+    This represents a SUCCESS: A septic patient caught early, with good actionable lead time.
+    """
+    success_candidates = []
+    for pid, pdf in df[df["eligibility_group"] == "early_warning_eligible"].groupby("patient_id"):
+        pdf = pdf.sort_values("ICULOS")
+        if pdf["label"].max() == 0:
+            continue
+            
+        onset_idx = pdf["label"].values.argmax()
+        pre_onset_flags = pdf["pred_label"].values[:onset_idx]
+        
+        if pre_onset_flags.sum() > 0:
+            first_flag_idx = np.argmax(pre_onset_flags == 1)
+            lead = onset_idx - first_flag_idx
+            success_candidates.append((pid, lead))
+            
+    if success_candidates:
+        # We pick a representative (median) case rather than cherry-picking the absolute best
+        success_candidates.sort(key=lambda x: x[1])
+        return success_candidates[len(success_candidates) // 2]
+    return None
+
+def _find_miss_case(df):
+    """
+    Finds the most "should have been catchable" miss.
+    This represents a MISS: A patient with >12 hours of pre-onset history who was still never flagged.
+    """
+    miss_candidates = []
+    for pid, pdf in df[df["eligibility_group"] == "early_warning_eligible"].groupby("patient_id"):
+        pdf = pdf.sort_values("ICULOS")
+        if pdf["label"].max() == 0:
+            continue
+            
+        onset_idx = pdf["label"].values.argmax()
+        pre_onset_flags = pdf["pred_label"].values[:onset_idx]
+        
+        # Condition: 0 flags, but had at least 12 hours of pre-onset data
+        if pre_onset_flags.sum() == 0 and onset_idx >= 12:  
+            miss_candidates.append((pid, onset_idx))
+            
+    if miss_candidates:
+        # Pick the one with the most pre-onset history (the biggest failure)
+        miss_candidates.sort(key=lambda x: -x[1])  
+        return miss_candidates[0]
+    return None
+
+def _find_false_alarm_case(df):
+    """
+    Finds a non-septic patient with the most false-positive hours.
+    This represents a FALSE ALARM case.
+    """
+    fa_candidates = []
+    for pid, pdf in df[df["eligibility_group"] == "never_septic"].groupby("patient_id"):
+        n_false_alarms = pdf["pred_label"].sum()
+        if n_false_alarms > 0:
+            fa_candidates.append((pid, n_false_alarms))
+            
+    if fa_candidates:
+        # Sort descending by number of false alarms
+        fa_candidates.sort(key=lambda x: -x[1])
+        return fa_candidates[0]
+    return None
+
+def _find_structural_limit_case(df):
+    """
+    Finds any immediate_only patient.
+    This represents a STRUCTURAL LIMITATION: onset happens too early for early warning.
+    """
+    imm_patients = df[df["eligibility_group"] == "immediate_only"]["patient_id"].unique()
+    if len(imm_patients) > 0:
+        return (imm_patients[0], None)
+    return None
+
 def find_examples(test_df_with_meta, raw_df, pred_probs, threshold=THRESHOLD,
                    vitals_to_show=("HR", "Resp", "MAP", "SBP")):
     """
@@ -41,63 +117,21 @@ def find_examples(test_df_with_meta, raw_df, pred_probs, threshold=THRESHOLD,
 
     examples = {}
 
-    # --- 1. SUCCESS: Median lead-time catch among early_warning_eligible ---
-    success_candidates = []
-    for pid, pdf in df[df["eligibility_group"] == "early_warning_eligible"].groupby("patient_id"):
-        pdf = pdf.sort_values("ICULOS")
-        if pdf["label"].max() == 0:
-            continue
-            
-        onset_idx = pdf["label"].values.argmax()
-        pre_onset_flags = pdf["pred_label"].values[:onset_idx]
-        
-        if pre_onset_flags.sum() > 0:
-            first_flag_idx = np.argmax(pre_onset_flags == 1)
-            lead = onset_idx - first_flag_idx
-            success_candidates.append((pid, lead))
-            
-    if success_candidates:
-        # We pick a representative (median) case rather than cherry-picking the absolute best
-        success_candidates.sort(key=lambda x: x[1])
-        median_case = success_candidates[len(success_candidates) // 2]
-        examples["success"] = median_case
+    success = _find_success_case(df)
+    if success:
+        examples["success"] = success
 
-    # --- 2. MISS: Most "should have been catchable" miss ---
-    # Looks for a patient with >12 hours of history who was still never flagged.
-    miss_candidates = []
-    for pid, pdf in df[df["eligibility_group"] == "early_warning_eligible"].groupby("patient_id"):
-        pdf = pdf.sort_values("ICULOS")
-        if pdf["label"].max() == 0:
-            continue
-            
-        onset_idx = pdf["label"].values.argmax()
-        pre_onset_flags = pdf["pred_label"].values[:onset_idx]
-        
-        # Condition: 0 flags, but had at least 12 hours of pre-onset data
-        if pre_onset_flags.sum() == 0 and onset_idx >= 12:  
-            miss_candidates.append((pid, onset_idx))
-            
-    if miss_candidates:
-        # Pick the one with the most pre-onset history (the biggest failure)
-        miss_candidates.sort(key=lambda x: -x[1])  
-        examples["miss"] = miss_candidates[0]
+    miss = _find_miss_case(df)
+    if miss:
+        examples["miss"] = miss
 
-    # --- 3. FALSE ALARM: Non-septic patient with the most false-positive hours ---
-    fa_candidates = []
-    for pid, pdf in df[df["eligibility_group"] == "never_septic"].groupby("patient_id"):
-        n_false_alarms = pdf["pred_label"].sum()
-        if n_false_alarms > 0:
-            fa_candidates.append((pid, n_false_alarms))
-            
-    if fa_candidates:
-        # Sort descending by number of false alarms
-        fa_candidates.sort(key=lambda x: -x[1])
-        examples["false_alarm"] = fa_candidates[0]
+    fa = _find_false_alarm_case(df)
+    if fa:
+        examples["false_alarm"] = fa
 
-    # --- 4. STRUCTURAL LIMITATION: Any immediate_only patient ---
-    imm_patients = df[df["eligibility_group"] == "immediate_only"]["patient_id"].unique()
-    if len(imm_patients) > 0:
-        examples["structural_limit"] = (imm_patients[0], None)
+    sl = _find_structural_limit_case(df)
+    if sl:
+        examples["structural_limit"] = sl
 
     return examples
 
