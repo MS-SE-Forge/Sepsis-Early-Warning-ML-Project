@@ -60,8 +60,8 @@ def train_logistic_baseline(train_df, val_df, feature_cols):
                pipe (sklearn.Pipeline): The trained scaler + logistic regression model.
                val_probs (np.ndarray): Predicted probability of sepsis for the validation set.
     """
-    X_train, y_train = train_df[feature_cols], train_df["label"]
-    X_val, y_val = val_df[feature_cols], val_df["label"]
+    x_train, y_train = train_df[feature_cols], train_df["label"]
+    x_val, _ = val_df[feature_cols], val_df["label"]
 
     # Construct a pipeline to ensure scaling happens strictly on training data
     # (preventing data leakage of mean/variance from the validation set).
@@ -72,13 +72,13 @@ def train_logistic_baseline(train_df, val_df, feature_cols):
             max_iter=2000,           # allow enough iterations for convergence
             random_state=42
         ))
-    ])
+    ], memory=None)
     
     # Train the linear baseline
-    pipe.fit(X_train, y_train)
+    pipe.fit(x_train, y_train)
 
     # Extract probabilities for the positive class (sepsis)
-    val_probs = pipe.predict_proba(X_val)[:, 1]
+    val_probs = pipe.predict_proba(x_val)[:, 1]
     
     return pipe, val_probs
 
