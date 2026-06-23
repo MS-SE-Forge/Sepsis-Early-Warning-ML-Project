@@ -39,15 +39,15 @@ This will:
 5. Compute validation metrics (including the utility proxy and lead-time analysis).
 6. Save the trained model, metrics, and demo datasets into the `artifacts/` folder.
 
-## Final Presentation
+## Final Analysis Notebook
 
-Once the artifacts are built, you can generate the final Jupyter Notebook presentation:
+Once the artifacts are built, you can generate the final Jupyter Notebook report:
 
 ```bash
 python build_notebook.py
 ```
 
-This generates `sepsis_early_warning.ipynb`, which contains a complete walkthrough of our methodology, interactive data exploration, error analysis visualizations, and a live demonstration of the model using the pre-computed artifacts.
+This generates `sepsis_early_warning.ipynb`, which contains a complete walkthrough of the methodology, interactive data exploration, error analysis visualizations, and inference examples using the pre-computed artifacts.
 
 ## Architecture & Design Choices
 

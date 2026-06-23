@@ -8,7 +8,7 @@ The official script expects, per patient:
   - A label file: <PatientID>.psv with column ["SepsisLabel"]
   - A prediction file: <PatientID>.psv with columns ["PredictedProbability","PredictedLabel"]
 
-This ensures our evaluation is 100% compliant with the official 2019 grading rubric.
+This ensures our evaluation is 100% compliant with the official 2019 PhysioNet scoring utility.
 """
 import os
 import pandas as pd
@@ -64,7 +64,7 @@ def write_label_and_prediction_files(
     print(f"Wrote {df.patient_id.nunique()} prediction files to {pred_dir}")
     
     # Print instructions for the user (though our project skips the external repo script now)
-    print(f"\nNext step (run in your terminal):")
+    print("\nNext step (run in your terminal):")
     print(f"  python evaluation-2019/evaluate_sepsis_score.py {label_dir} {pred_dir} utility_results.psv")
 
 if __name__ == "__main__":

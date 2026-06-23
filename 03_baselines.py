@@ -1,7 +1,7 @@
 """
 Section: Selected Models - Baselines
 
-This script establishes two critical baselines required by the project rubric:
+This script establishes two critical baselines required to contextualize performance:
 1. Clinical-rule reference: A sanity check using a qSOFA-inspired hardcoded rule.
    This proves whether machine learning is actually better than a simple clinical heuristic.
 2. Logistic regression: A linear, learned baseline to prove whether the complexity 

@@ -10,8 +10,8 @@ This script extracts concrete patient-level examples from the TEST set
   4. STRUCTURAL LIMITATION: An `immediate_only` patient, demonstrating exactly
      why this group cannot be "caught early" by mathematical construction.
 
-We print the raw vital-sign trajectories for these patients so the audience 
-can see exactly what the algorithm "saw" when it succeeded or failed.
+We print the raw vital-sign trajectories for these patients to provide exact visibility
+into what the algorithm processed when it succeeded or failed.
 """
 import numpy as np
 import pandas as pd

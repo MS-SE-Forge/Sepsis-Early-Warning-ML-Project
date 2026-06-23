@@ -1,5 +1,5 @@
 """
-Generates the final presentation notebook (sepsis_early_warning.ipynb)
+Generates the final analysis notebook (sepsis_early_warning.ipynb)
 from the artifacts saved by 12_build_artifacts.py.
 
 Run this AFTER 12_build_artifacts.py has completed successfully and
@@ -27,7 +27,7 @@ md("""# Early Sepsis Warning with Utility-Based Clinical Thresholds
 **Course:** [FILL IN YOUR COURSE NAME]
 **Group Number:** [FILL IN YOUR GROUP NUMBER]
 **Team Members:** [FILL IN NAMES + MATRICULATION NUMBERS]
-**Date:** [FILL IN PRESENTATION DATE]
+**Date:** [FILL IN DATE]
 
 ---
 """)

@@ -9,11 +9,11 @@ What it does:
   2. Saves the trained XGBoost model to disk (`artifacts/xgb_model.joblib`).
   3. Saves test set predictions for instant metric re-computation without retraining.
   4. Saves pre-computed tables (stratified metrics, hospital subgroups).
-  5. Extracts a tiny demo sample of real patient data to run live predictions in the presentation.
+  5. Extracts a tiny demo sample of real patient data to run rapid predictions in the notebook.
 
 Why this exists:
-  Training XGBoost on 1.5 million rows takes ~5-10 minutes. If the presentation notebook 
-  had to retrain from scratch every time you opened it, the live demo would be excruciatingly slow.
+  Training XGBoost on 1.5 million rows takes ~5-10 minutes. If the analysis notebook 
+  had to retrain from scratch every time it was opened, exploration would be excruciatingly slow.
   By saving "artifacts" to disk, the final notebook loads instantly.
 """
 import os
@@ -83,8 +83,8 @@ def main():
     test_out["pred_prob"] = test_probs
     test_out.to_csv(os.path.join(ARTIFACT_DIR, "test_predictions.csv"), index=False)
 
-    # --- Save a SMALL sample for the Live Demo Cell ---
-    # Select a few representative patients from the test set for a fast, live demonstration
+    # --- Save a SMALL sample for the interactive Demo Cell ---
+    # Select a few representative patients from the test set for rapid inference demonstration
     demo_patients = []
     for group in ["early_warning_eligible", "immediate_only", "never_septic"]:
         ids = test_df[test_df["eligibility_group"] == group]["patient_id"].unique()

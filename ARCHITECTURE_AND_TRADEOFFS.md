@@ -1,8 +1,6 @@
 # Comprehensive Project Documentation & Architecture Guide
 
-Welcome to the Early Sepsis Warning project. This document is designed for all group members and future maintainers to understand **not just how** the codebase works, but **why** it was designed this way. 
-
-We made several very specific clinical and machine learning trade-offs. Understanding these trade-offs is crucial for presenting this project successfully.
+Welcome to the Early Sepsis Warning project. This document outlines the architectural decisions and clinical trade-offs made during the development of this codebase.
 
 ---
 
@@ -24,9 +22,9 @@ The project is structured as a sequential pipeline, explicitly numbered from `01
    - Sweeps for the optimal probability threshold based on an *approximate utility score* (rewarding lead time, penalizing false alarms).
    - Stratifies results by hospital and patient subgroup.
    - Extracts specific error analysis examples (Success, Miss, False Alarm).
-5. **Orchestration & Presentation (`12_build_artifacts.py`, `build_notebook.py`)**:
+5. **Orchestration & Reporting (`12_build_artifacts.py`, `build_notebook.py`)**:
    - The master script (`12`) runs everything end-to-end and saves the model and metric tables to an `artifacts/` directory.
-   - The presentation builder takes those static artifacts and builds `sepsis_early_warning.ipynb` for instant, live demonstration without slow retraining.
+   - The report builder takes those static artifacts and builds `sepsis_early_warning.ipynb` for instant analysis without slow retraining.
 
 ---
 
@@ -34,7 +32,7 @@ The project is structured as a sequential pipeline, explicitly numbered from `01
 
 ### A. XGBoost vs. Deep Learning (e.g., LSTM / RNN)
 *   **The Decision**: We chose XGBoost combined with manual feature engineering over a Deep Learning sequence model.
-*   **The Why**: XGBoost trains in minutes, is highly interpretable (crucial for clinical audiences who want to see feature importance), handles `NaN` values natively, and requires far less tuning. 
+*   **The Why**: XGBoost trains in minutes, is highly interpretable (crucial for clinical interpretability), handles `NaN` values natively, and requires far less tuning. 
 *   **The Trade-off**: We had to manually construct sequence features (6-hour rolling means and slopes). An LSTM would learn these temporal patterns automatically, but would be a black box, harder to train, and harder to justify clinically.
 
 ### B. Forward Filling vs. Mean Imputation
@@ -58,11 +56,11 @@ The project is structured as a sequential pipeline, explicitly numbered from `01
 
 ### F. Robustness & Distribution Shift (Hospital A vs. Hospital B)
 *   **The Decision**: We explicitly evaluate the model's performance stratified by hospital source (`10_hospital_subgroup.py`).
-*   **The Why**: The Summer 2026 rubric specifically checks for robustness against **distribution shift**. A model that memorizes the clinical protocols of Hospital A might fail catastrophically at Hospital B. By evaluating subgroups separately, we prove to the graders that our model generalizes across different healthcare systems, not just a single dataset.
+*   **The Why**: Evaluating robustness against **distribution shift** is critical. A model that memorizes the clinical protocols of Hospital A might fail catastrophically at Hospital B. By evaluating subgroups separately, we ensure that our model generalizes across different healthcare systems, not just a single dataset.
 
-### G. Live Demonstration Strategy
-*   **The Decision**: We decoupled the heavy training pipeline (`12_build_artifacts.py`) from the presentation layer (`build_notebook.py`).
-*   **The Why**: The rubric demands a **"smooth live demonstration"**. Training an XGBoost model on 1.5 million rows takes several minutes. If we trained the model live during the presentation, there would be dead air, risking points. By saving the model, predictions, and a small subset of "demo patients" to the `artifacts/` folder, the Jupyter notebook loads and predicts instantly.
+### G. Artifact Pre-computation Strategy
+*   **The Decision**: We decoupled the heavy training pipeline (`12_build_artifacts.py`) from the reporting layer (`build_notebook.py`).
+*   **The Why**: Training an XGBoost model on 1.5 million rows takes several minutes. By saving the model, predictions, and a small subset of "demo patients" to the `artifacts/` folder, the Jupyter notebook analysis loads and predicts instantly.
 
 ---
 
