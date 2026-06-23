@@ -24,10 +24,10 @@ def code(text):
 # ============================================================
 md("""# Early Sepsis Warning with Utility-Based Clinical Thresholds
 
-**Course:** [Your Course Name]
-**Group Number:** [Your Group Number]
-**Team Members:** [Names + Matriculation Numbers]
-**Date:** [Presentation Date]
+**Course:** [FILL IN YOUR COURSE NAME]
+**Group Number:** [FILL IN YOUR GROUP NUMBER]
+**Team Members:** [FILL IN NAMES + MATRICULATION NUMBERS]
+**Date:** [FILL IN PRESENTATION DATE]
 
 ---
 """)
@@ -37,28 +37,17 @@ md("""# Early Sepsis Warning with Utility-Based Clinical Thresholds
 # ============================================================
 md("""## 1. Problem Statement
 
-**The question this project answers:** Can ICU vital signs and lab values be used to predict
-sepsis onset *before* it is clinically obvious, early enough to be clinically useful, without
-generating excessive false alarms?
+**Question:** Can ICU vital signs and lab values predict sepsis *before* clinical onset, without generating excessive false alarms?
 
-**Why this is harder than standard binary classification:**
+**Key challenges making this harder than standard classification:**
+- **Time-series data:** Requires modeling trends (e.g., rising heart rate), evaluated strictly by *patient* to avoid data leakage.
+- **Severe imbalance:** Only ~7.3% of patients develop sepsis, and ~1.8% of hourly rows are labeled septic. A trivial "always negative" model hits 98% accuracy, making standard accuracy metrics useless.
+- **Time sensitivity:** Early detection (e.g., 40 hours before onset) is clinically valuable; detecting at onset is not. 
+- **Utility scoring:** We use the PhysioNet 2019 utility function to explicitly reward early detection and penalize false alarms/misses.
 
-- **Time-series, not single-snapshot.** Each patient contributes many hourly rows that are
-  strongly correlated with each other. Modeling requires trend information (is heart rate
-  rising? is blood pressure falling?), and evaluation requires splitting by *patient*, not by
-  row, to avoid subject leakage.
-- **Severe class imbalance.** Only ~7.3% of patients in this dataset ever develop sepsis, and
-  only ~1.8% of individual hourly rows are labeled septic. A trivial "always predict no sepsis"
-  model achieves ~98% row-level accuracy while catching zero cases — making accuracy useless
-  as an evaluation metric.
-- **Early detection has a time dimension.** A true positive flagged 40 hours before onset is
-  far more clinically valuable than one flagged at the moment of onset. Standard classification
-  metrics do not capture this; we use the official PhysioNet 2019 Challenge utility function,
-  which explicitly rewards early detection and penalizes false alarms and late/missed cases.
-
-**What we are NOT claiming:** this is not a clinical-grade deployable system. It is a course
-project demonstrating a methodologically sound approach to a genuinely hard early-warning
-problem, including honest treatment of its limitations.
+**Project Scope:**
+- This is a methodologically sound demonstration of an early-warning pipeline, not a deployable clinical system.
+- Focuses on honest treatment of dataset limitations and rigorous validation.
 """)
 
 # ============================================================
@@ -80,14 +69,13 @@ md("""## 2. Dataset
 - Median ICU stay length: 39 hours (range: 8 to 336 hours)
 - Sepsis onset hour (among septic patients) ranges from hour 1 to hour 331, median hour 29
 
-**A critical limitation we identified and handled explicitly:** 25% of septic patients (733 of
-2,932) have sepsis onset within the first 6 hours of their ICU stay — too early for our
-windowing scheme to construct a genuine pre-onset ("early warning") example. We tag every
-patient into one of three groups and report results for each separately (see Methodology and
-Results sections):
-- `never_septic` (37,404 patients)
-- `early_warning_eligible` (2,199 patients) — genuine early-warning prediction is possible
-- `immediate_only` (733 patients) — onset too early; only immediate detection is possible
+**A critical limitation we identified and handled explicitly:** 
+- 25% of septic patients (733 of 2,932) have sepsis onset within the first 6 hours of their ICU stay.
+- This is too early for our 6-hour windowing scheme to construct a genuine "early warning" example.
+- We tag every patient into one of three groups and report results separately:
+  - `never_septic` (37,404 patients)
+  - `early_warning_eligible` (2,199 patients) — genuine early-warning prediction is possible
+  - `immediate_only` (733 patients) — onset too early; only immediate detection is possible
 """)
 
 code("""import pandas as pd
@@ -278,10 +266,28 @@ code("""with open("artifacts/error_examples.json") as f:
 demo_raw = pd.read_csv("artifacts/demo_raw_patients.csv")
 
 def show_patient(pid, vitals=("HR", "Resp", "MAP", "SBP")):
+    import matplotlib.pyplot as plt
     pdf = demo_raw[demo_raw["patient_id"] == pid].sort_values("ICULOS")
     onset_idx = pdf["SepsisLabel"].values.argmax() if pdf["SepsisLabel"].max() == 1 else None
+    
     print(f"Patient {pid}: {len(pdf)} hour stay" +
           (f", onset at hour {onset_idx+1}" if onset_idx is not None else " (never septic)"))
+    
+    fig, axes = plt.subplots(len(vitals), 1, figsize=(10, 2*len(vitals)), sharex=True)
+    if len(vitals) == 1: axes = [axes]
+    
+    for ax, v in zip(axes, vitals):
+        ax.plot(pdf["ICULOS"], pdf[v], marker="o", markersize=3, label=v)
+        if onset_idx is not None:
+            ax.axvline(x=pdf["ICULOS"].iloc[onset_idx], color="red", linestyle="--", alpha=0.5, label="Sepsis Onset")
+        ax.set_ylabel(v)
+        ax.legend(loc="upper left")
+        ax.grid(True, alpha=0.3)
+    
+    axes[-1].set_xlabel("ICU Hour (ICULOS)")
+    plt.tight_layout()
+    plt.show()
+    
     return pdf[["ICULOS"] + list(vitals) + ["SepsisLabel"]]
 
 print("=== SUCCESS CASE ===")
@@ -358,24 +364,17 @@ sections.
 # ============================================================
 md("""## 8. Conclusion
 
-We built a time-windowed early sepsis warning system using XGBoost on the PhysioNet 2019
-Challenge dataset, with patient-level leakage-safe splitting, missingness-aware feature
-engineering, and utility-based threshold selection.
+**Summary:** We built a time-windowed early sepsis warning system using XGBoost on the PhysioNet dataset, featuring patient-level leakage-safe splitting and utility-based threshold selection.
 
-**Answering our original question:** yes, ICU vital signs and labs can predict sepsis
-meaningfully before clinical onset for a substantial majority (75%) of septic patients, with a
-median lead time of 48 hours among successfully caught cases, and a positive official utility
-score (+0.118) confirming net clinical value above a do-nothing baseline. However, this value is
-not uniform: roughly 1 in 4 septic patients have insufficient pre-onset history for genuine
-early warning by construction, and the model's catch rate (~22% at our chosen threshold) leaves
-real room for improvement, particularly for patients whose presentation doesn't follow the
-dominant rising-vitals pattern the model has learned.
+**Answering our original question:** 
+- **Yes:** ICU vital signs and labs can predict sepsis meaningfully before clinical onset for ~75% of septic patients.
+- **Performance:** Median lead time is 48 hours among caught cases, with a positive official utility score (+0.118).
+- **Limitations:** Roughly 1 in 4 septic patients lack sufficient pre-onset history for early warning. The ~22% catch rate leaves room for improvement on atypical presentations.
 
-**What could be improved with more time:** explore variable-length windows to partially rescue
-some of the `immediate_only` group, investigate alternative features (e.g., relative trend
-shapes rather than just slope) that may generalize better to atypical presentations, and
-compare against a recurrent (LSTM/GRU) architecture as a true sequence model rather than our
-windowed-tabular approximation.
+**Future Work:**
+- Explore variable-length windows to rescue the `immediate_only` group.
+- Investigate relative trend shapes rather than just linear slopes.
+- Compare against a recurrent architecture (LSTM/GRU) as a true sequence model.
 """)
 
 # ============================================================
