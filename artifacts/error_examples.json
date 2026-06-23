@@ -1,0 +1,18 @@
+{
+  "success": [
+    "p116887",
+    46
+  ],
+  "miss": [
+    "p100016",
+    259
+  ],
+  "false_alarm": [
+    "p009713",
+    39
+  ],
+  "structural_limit": [
+    "p000211",
+    null
+  ]
+}

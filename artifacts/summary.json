@@ -1,0 +1,7 @@
+{
+  "n_total_patients": 40336,
+  "threshold_used": 0.8,
+  "n_train_patients": 28234,
+  "n_val_patients": 4034,
+  "n_test_patients": 8068
+}
