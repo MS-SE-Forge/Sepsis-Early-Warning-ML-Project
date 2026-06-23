@@ -72,7 +72,7 @@ def train_logistic_baseline(train_df, val_df, feature_cols):
             max_iter=2000,           # allow enough iterations for convergence
             random_state=42
         ))
-    ], memory=None)
+    ], memory=None) # Explicitly disable transformer caching to avoid unnecessary disk I/O overhead
     
     # Train the linear baseline
     pipe.fit(x_train, y_train)
