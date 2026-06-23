@@ -13,9 +13,9 @@ import os
 
 # Define the paths to the PhysioNet dataset directories
 DATA_DIRS = [
-      "physionet.org/files/challenge-2019/1.0.0/training/training_setA",
-      "physionet.org/files/challenge-2019/1.0.0/training/training_setB",
-  ] # adjust paths as needed
+      "input/training_setA",
+      "input/training_setB",
+  ]
 
 def load_all_patients(data_dirs):
     """

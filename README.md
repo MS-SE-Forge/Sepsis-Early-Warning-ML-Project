@@ -12,7 +12,7 @@ We use the **PhysioNet / Computing in Cardiology Challenge 2019** dataset.
 *(Note: To comply with data sharing rules and repository size limits, the raw dataset is not included in this repository. You must download it separately).*
 
 1. Download `training_setA` and `training_setB` from [PhysioNet 2019](https://physionet.org/content/challenge-2019/1.0.0/).
-2. Place the downloaded `.psv` files into a `physionet.org/` directory in the root of this project.
+2. Place the downloaded `.psv` files into an `input/` directory in the root of this project.
 
 ## Installation & Setup
 
@@ -51,7 +51,6 @@ This generates `sepsis_early_warning.ipynb`, which contains a complete walkthrou
 
 ## Architecture & Design Choices
 
-*   **Windowing**: We use a 6-hour sliding window to capture trends (slopes and moving averages) of vital signs, recognizing that clinical data is a time-series, not a static snapshot.
-*   **Leakage Prevention**: We enforce strict split boundaries based on `patient_id`. Random row-level splitting causes severe data leakage in clinical datasets.
-*   **Missingness**: Missing lab values carry implicit clinical signals (e.g., a lab wasn't ordered). We use missingness indicator variables and forward-filling rather than mean-imputation.
-*   **Early Warning Tagging**: Patients who are septic upon ICU admission structurally cannot be "predicted early". Our pipeline explicitly tags these patients (`immediate_only`) and stratifies evaluation results to accurately reflect true early-warning capabilities.
+To understand **why** the pipeline was built this way, please refer to our two detailed engineering documents:
+1. **[ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)**: A complete flowchart mapping out the exact data flow from ingestion to the final generated notebook.
+2. **[ARCHITECTURE_AND_TRADEOFFS.md](ARCHITECTURE_AND_TRADEOFFS.md)**: A comprehensive guide explaining the exact clinical and machine learning trade-offs made in this project (e.g. why XGBoost was chosen over an LSTM, why missingness is tracked as an explicit feature, and how the patient-level split prevents catastrophic data leakage).
