@@ -1,7 +1,5 @@
 """
 Section: Dataset / EDA
-Run this against the REAL training_setA / training_setB folders.
-Point DATA_DIRS at your actual downloaded data.
 
 This script is responsible for loading the raw PhysioNet 2019 Sepsis challenge data
 and performing foundational Exploratory Data Analysis (EDA). The EDA focuses heavily

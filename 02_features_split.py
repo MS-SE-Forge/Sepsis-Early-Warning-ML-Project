@@ -178,7 +178,7 @@ if __name__ == "__main__":
     eda = import_module("01_eda")
     
     # Test the logic on a single dataset folder
-    df = eda.load_all_patients(["training_setA"])
+    df = eda.load_all_patients(eda.DATA_DIRS)
     df = add_missingness_indicators(df, LABS)
     df = forward_fill_within_patient(df, VITALS + LABS)
     

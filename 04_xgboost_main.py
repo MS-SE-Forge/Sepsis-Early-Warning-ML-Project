@@ -31,8 +31,8 @@ def train_xgb(train_df, val_df, feature_cols, random_state=42):
                model (xgb.XGBClassifier): The trained XGBoost model.
                val_probs (np.ndarray): The predicted probabilities on the validation set.
     """
-    X_train, y_train = train_df[feature_cols], train_df["label"]
-    X_val, y_val = val_df[feature_cols], val_df["label"]
+    x_train, y_train = train_df[feature_cols], train_df["label"]
+    x_val, y_val = val_df[feature_cols], val_df["label"]
 
     # Calculate scale_pos_weight = (number of negatives) / (number of positives).
     # This is the standard XGBoost recipe for imbalanced binary classification.
@@ -57,13 +57,13 @@ def train_xgb(train_df, val_df, feature_cols, random_state=42):
     
     # Train the model, monitoring performance on the validation set
     model.fit(
-        X_train, y_train,
-        eval_set=[(X_val, y_val)],
+        x_train, y_train,
+        eval_set=[(x_val, y_val)],
         verbose=False # Keep terminal output clean during automated runs
     )
 
     # Extract the probability that the patient will develop sepsis
-    val_probs = model.predict_proba(X_val)[:, 1]
+    val_probs = model.predict_proba(x_val)[:, 1]
     
     return model, val_probs
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     feat_mod = import_module("02_features_split")
 
     # Load and prep data
-    df = eda.load_all_patients(["training_setA"])
+    df = eda.load_all_patients(eda.DATA_DIRS)
     df = feat_mod.add_missingness_indicators(df, feat_mod.LABS)
     df = feat_mod.forward_fill_within_patient(df, feat_mod.VITALS + feat_mod.LABS)
     feat_df = feat_mod.build_windowed_features(df)

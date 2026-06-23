@@ -88,7 +88,7 @@ if __name__ == "__main__":
     feat_mod = import_module("02_features_split")
 
     # Standard data loading pipeline
-    df = eda.load_all_patients(["training_setA"])
+    df = eda.load_all_patients(eda.DATA_DIRS)
     df = feat_mod.add_missingness_indicators(df, feat_mod.LABS)
     df = feat_mod.forward_fill_within_patient(df, feat_mod.VITALS + feat_mod.LABS)
     feat_df = feat_mod.build_windowed_features(df)
