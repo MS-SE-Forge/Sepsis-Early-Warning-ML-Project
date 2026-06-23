@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This repository contains the codebase for our Machine Learning Project: an Early Sepsis Warning System. The core objective is to predict sepsis onset in ICU patients *before* it becomes clinically obvious, providing actionable lead time for medical intervention without overwhelming staff with false alarms.
+This repository contains the codebase for an Early Sepsis Warning System. The core objective is to predict sepsis onset in ICU patients *before* it becomes clinically obvious, providing actionable lead time for medical intervention without overwhelming staff with false alarms.
 
 Instead of relying on standard binary classification metrics like Accuracy or AUROC (which are misleading under the severe class imbalances of clinical data), this project optimizes for **clinical utility**, penalizing false alarms and missed cases while explicitly rewarding early true positives.
 
@@ -33,11 +33,12 @@ python 12_build_artifacts.py
 
 This will:
 1. Load and clean the dataset.
-2. Forward-fill vitals/labs and extract 6-hour sliding window features.
-3. Apply a patient-level `GroupShuffleSplit` to prevent leakage.
-4. Train the primary XGBoost model, handling class imbalance natively.
-5. Compute validation metrics (including the utility proxy and lead-time analysis).
-6. Save the trained model, metrics, and demo datasets into the `artifacts/` folder.
+2. Add missingness indicators and forward-fill vitals/labs.
+3. Extract 6-hour sliding window features using `02b_features_fast.py` (the vectorized feature builder).
+4. Apply a patient-level `GroupShuffleSplit` to prevent leakage.
+5. Train the primary XGBoost model, handling class imbalance natively.
+6. Compute validation metrics (including the utility proxy and lead-time analysis).
+7. Save the trained model, metrics, and demo datasets into the `artifacts/` folder.
 
 ## Final Analysis Notebook
 

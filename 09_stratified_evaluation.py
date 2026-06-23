@@ -137,5 +137,7 @@ if __name__ == "__main__":
     results = stratified_metrics(val_df, "pred_prob")
     print(results.to_string(index=False))
 
-    print("\n=== Stratified lead-time (validation set, threshold=0.5) ===")
-    stratified_lead_time(val_df, "pred_prob", threshold=0.5)
+    # Use the same threshold validated via utility sweep in 06_threshold_leadtime.py
+    THRESHOLD = 0.80
+    print("\n=== Stratified lead-time (validation set, threshold=0.80) ===")
+    stratified_lead_time(val_df, "pred_prob", threshold=THRESHOLD)
