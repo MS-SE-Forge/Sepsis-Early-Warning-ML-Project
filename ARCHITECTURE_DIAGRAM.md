@@ -3,7 +3,7 @@
 The following diagram provides a detailed, modular overview of the data pipeline, feature engineering logic, machine learning lifecycle, and evaluation process.
 
 ```mermaid
-flowchart LR
+flowchart TB
     %% Styling
     classDef rawData fill:#e2e8f0,stroke:#64748b,stroke-width:2px,color:#0f172a
     classDef etl fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
