@@ -28,82 +28,113 @@ def _rolling_slope_vectorized(series, window):
     Fully vectorized rolling slope using the closed-form OLS formula,
     computed via rolling sums rather than a per-window Python callback.
 
+    The mathematical formula for Ordinary Least Squares slope is:
     slope = (n*sum(xy) - sum(x)*sum(y)) / (n*sum(x^2) - sum(x)^2)
 
     For a FIXED window with x = [0, 1, ..., window-1], sum(x) and sum(x^2)
     are constants we can precompute. We only need rolling sum(y) and
     rolling sum(x*y) per window, both of which pandas .rolling().sum()
-    computes in optimized C - no Python-level loop per window.
+    computes in optimized C - avoiding any Python-level loop per window.
+    
+    Args:
+        series (pd.Series): The clinical variable (e.g., Heart Rate).
+        window (int): The window size (number of points).
+        
+    Returns:
+        pd.Series: A rolling slope calculated efficiently.
     """
     n = window
+    
+    # 1. Precompute constants based on x indices
     x = np.arange(n)
     sum_x = x.sum()
     sum_x2 = (x ** 2).sum()
-    denom = n * sum_x2 - sum_x ** 2  # constant, since x is fixed per window
+    denom = n * sum_x2 - sum_x ** 2  # The denominator is constant since x is fixed per window
 
-    # For sum(x*y) within each window, weight each point by its position
-    # WITHIN the window. We achieve this by constructing n shifted copies
-    # and combining - still vectorized, just window-sized number of shifts
-    # (window=6, so only 6 shift operations total, not one per row).
+    # 2. Compute rolling sums
     y = series.values
     weighted_sum_xy = np.zeros(len(y))
     rolling_sum_y = series.rolling(window=n, min_periods=n).sum().values
 
-    # sum(x*y) for window ending at position i = sum_{k=0}^{n-1} k * y[i-(n-1-k)]
-    # Build via shifting: position weight k corresponds to lag (n-1-k)
+    # 3. Compute sum(x*y) using a shifting trick
+    # For sum(x*y) within each window, weight each point by its position
+    # WITHIN the window. We achieve this by constructing n shifted copies
+    # and combining. Since window=6, this requires only 6 fast shift operations
+    # instead of millions of loop iterations.
     for k in range(n):
         lag = n - 1 - k
         shifted = series.shift(lag).values
         weighted_sum_xy += k * np.nan_to_num(shifted, nan=0.0)
 
+    # 4. Final OLS calculation
     slope = (n * weighted_sum_xy - sum_x * rolling_sum_y) / denom
-    # First (window-1) rows per group don't have a full window - set slope to 0
+    
+    # First (window-1) rows per group don't have a full window, so slope is mathematically undefined.
+    # We default these to 0.0 to prevent NaNs propagating.
     slope[np.isnan(rolling_sum_y)] = 0.0
     return slope
 
 def build_windowed_features_fast(df, vitals, labs, demographics, window=WINDOW):
     """
-    Drop-in faster replacement for build_windowed_features.
-    df must already have missingness indicator columns (e.g. f"{lab}_missing")
-    and forward-filled vitals/labs, same as before.
+    Drop-in faster replacement for `build_windowed_features`.
+    Assumes `df` already has missingness indicator columns and forward-filled values.
 
-    IMPORTANT: matches the ORIGINAL function's window definition exactly:
-    hist = pdf.iloc[t-window : t+1] is `window + 1` points (inclusive of
-    both the start and the current hour t). We use `n_points = window + 1`
-    throughout to match this precisely - verified against the original
-    row-by-row implementation on real data above.
+    IMPORTANT MATH DETAIL: `hist = pdf.iloc[t-window : t+1]` in the original script
+    includes `window + 1` points (inclusive of both the start and the current hour t). 
+    We use `n_points = window + 1` throughout this vectorized function to match 
+    the original behavior exactly.
+    
+    Args:
+        df (pd.DataFrame): The clinical dataset.
+        vitals (list): List of vital sign column names.
+        labs (list): List of lab column names.
+        demographics (list): List of demographic column names.
+        window (int): The lookback window.
+        
+    Returns:
+        pd.DataFrame: The fully engineered feature set.
     """
     n_points = window + 1
+    
+    # Ensure data is strictly sorted by time within each patient
     df = df.sort_values(["patient_id", "ICULOS"]).copy()
     grouped = df.groupby("patient_id", sort=False)
 
+    # Pre-allocate output DataFrame for speed
     out = pd.DataFrame(index=df.index)
     out["patient_id"] = df["patient_id"].values
     out["ICULOS"] = df["ICULOS"].values
 
+    # Compute Vital Sign rolling stats (highly dynamic, so we capture mean and slope)
     for v in vitals:
         out[f"{v}_last"] = df[v].values
+        
+        # Fast rolling mean
         out[f"{v}_mean"] = grouped[v].transform(
             lambda s: s.rolling(window=n_points, min_periods=n_points).mean()
         ).values
+        
+        # Fast rolling slope (using our custom vectorized OLS)
         out[f"{v}_slope"] = grouped[v].transform(
             lambda s: pd.Series(_rolling_slope_vectorized(s, n_points), index=s.index)
         ).values
 
+    # Compute Lab stats (slow moving, so we just take last value and missingness rate)
     for lab in labs:
         out[f"{lab}_last"] = df[lab].values
         out[f"{lab}_missing_rate"] = grouped[f"{lab}_missing"].transform(
             lambda s: s.rolling(window=n_points, min_periods=n_points).mean()
         ).values
 
+    # Static Demographic mappings
     for d in demographics:
         out[d] = df[d].values
 
     out["hospital_source"] = df["hospital_source"].values
     out["label"] = df["SepsisLabel"].values
 
-    # Original keeps rows for t in range(window, n) -> 0-indexed positions
-    # window, window+1, ..., n-1. That's row_position >= window.
+    # The original script drops the first `window` hours per patient because 
+    # rolling stats aren't valid yet. We replicate that by filtering by `cumcount()`.
     row_position = grouped.cumcount()
     out = out[row_position.values >= window].reset_index(drop=True)
 
@@ -120,6 +151,7 @@ if __name__ == "__main__":
     df = eda.load_all_patients(eda.DATA_DIRS)
     print(f"Loaded {len(df):,} rows in {time.time()-t0:.1f}s")
 
+    # Apply preprocessing from 02
     df = feat_mod.add_missingness_indicators(df, feat_mod.LABS)
     df = feat_mod.forward_fill_within_patient(df, feat_mod.VITALS + feat_mod.LABS)
 
