@@ -14,6 +14,7 @@ Why XGBoost fits this problem specifically:
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+import shutil
 from sklearn.metrics import roc_auc_score, average_precision_score
 
 def train_xgb(train_df, val_df, feature_cols, random_state=42):
@@ -41,6 +42,9 @@ def train_xgb(train_df, val_df, feature_cols, random_state=42):
     n_neg = len(y_train) - n_pos
     scale_pos_weight = n_neg / max(n_pos, 1)
 
+    # Detect hardware acceleration
+    has_gpu = shutil.which("nvidia-smi") is not None
+
     # Initialize the model with hyperparameters designed to prevent overfitting
     model = xgb.XGBClassifier(
         n_estimators=500,               # Maximum number of trees
@@ -51,8 +55,10 @@ def train_xgb(train_df, val_df, feature_cols, random_state=42):
         scale_pos_weight=scale_pos_weight, # Address extreme class imbalance
         eval_metric="aucpr",            # Crucial: Optimize toward Precision-Recall, NOT accuracy/AUC
         early_stopping_rounds=30,       # Stop adding trees if validation AUPRC hasn't improved in 30 rounds
+        tree_method="hist",             # Histogram-based algorithm (fastest on CPU & GPU)
+        device="cuda" if has_gpu else "cpu", # Automatically accelerate on any available NVIDIA GPU
         random_state=random_state,
-        n_jobs=-1,                      # Use all CPU cores
+        n_jobs=-1,                      # Use all available CPU threads
     )
     
     # Train the model, monitoring performance on the validation set
