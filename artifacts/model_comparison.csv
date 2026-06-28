@@ -1,0 +1,6 @@
+Model,AUPRC,AUROC,Utility (Official),Sensitivity,False Alarm Rate
+qSOFA Rule,0.022,0.582,-0.0406,45.6%,29.6%
+Logistic Regression,0.0488,0.748,0.1883,66.6%,28.9%
+XGBoost,0.0794,0.804,0.2866,52.7%,14.7%
+LightGBM,0.0913,0.815,0.3198,68.8%,22.5%
+Ensemble (primary),0.0869,0.813,0.3151,61.2%,18.2%
