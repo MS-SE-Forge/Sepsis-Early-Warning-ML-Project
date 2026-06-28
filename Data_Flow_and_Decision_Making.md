@@ -10,30 +10,30 @@ The notebook is architected with a dual-execution path controlled by **Cell 2.2b
 
 ```mermaid
 graph TD
-    A["📂 Raw Dataset Directories<br/>Cell 2.3: Auto-detect paths (training_setA / setB)<br/>Cell 2.4: Load 40,336 patients (~1.5M hourly rows)"] --> B{"⚖️ Cell 2.2b: Run Control Gate<br/>Check FORCE_RETRAIN & Artifact Existence"}
+    A["📂 Raw Dataset Directories<br/>Cell 2.3: Auto-detect paths - training_setA / setB<br/>Cell 2.4: Load 40,336 patients - ~1.5M hourly rows"] --> B{"⚖️ Cell 2.2b: Run Control Gate<br/>Check FORCE_RETRAIN and Artifact Existence"}
     
-    B -->|FORCE_RETRAIN = False<br/>& All Files Present| C["⚡ Fast-Load Mode (~60 seconds)<br/>Cell 3.0 (Centralized Loader): imports pre-trained<br/>.joblib models & predictions.csv instantly"]
-    B -->|FORCE_RETRAIN = True<br/>or Missing Files| D["🔁 Full Training Pipeline (~7 minutes)<br/>Execute active machine learning training"]
+    B -->|FORCE_RETRAIN = False<br/>and All Files Present| C["⚡ Fast-Load Mode ~60 seconds<br/>Cell 3.0 Centralized Loader: imports pre-trained<br/>.joblib models and predictions.csv instantly"]
+    B -->|FORCE_RETRAIN = True<br/>or Missing Files| D["🔁 Full Training Pipeline ~7 minutes<br/>Execute active machine learning training"]
     
-    subgraph Core Preprocessing & Feature Extraction Pipeline
-        D --> E["🧹 Preprocessing & Imputation<br/>Cell 4.2: Tag patient eligibility groups<br/>Cell 4.3: Create binary lab missingness flags<br/>Cell 4.4: Forward-fill vital history per patient<br/>Cell 4.5: Median fill start-of-stay NaNs"]
-        E --> F["⏱️ 6-Hour Sliding Window Engineering<br/>Cell 4.6: build_windowed_features() computes rolling<br/>means, linear regression slopes & lab miss rates"]
-        F --> G["🔒 Leakage-Free Patient-Level Split<br/>Cell 4.8: GroupShuffleSplit (70% Train | 10% Val | 20% Test)<br/>Cell 4.9: Assert 0 overlapping patients across splits"]
+    subgraph Core Preprocessing and Feature Extraction Pipeline
+        D --> E["🧹 Preprocessing and Imputation<br/>Cell 4.2: Tag patient eligibility groups<br/>Cell 4.3: Create binary lab missingness flags<br/>Cell 4.4: Forward-fill vital history per patient<br/>Cell 4.5: Median fill start-of-stay NaNs"]
+        E --> F["⏱️ 6-Hour Sliding Window Engineering<br/>Cell 4.6: build_windowed_features computes rolling<br/>means, linear regression slopes and lab miss rates"]
+        F --> G["🔒 Leakage-Free Patient-Level Split<br/>Cell 4.8: GroupShuffleSplit - 70% Train | 10% Val | 20% Test<br/>Cell 4.9: Assert 0 overlapping patients across splits"]
     end
     
-    subgraph Model Training & Tuning Pipeline
-        G --> H["🤖 Model Training & Hyperparameter Tuning<br/>Cell 5.1: Evaluate qSOFA clinical baseline<br/>Cell 5.2: Train ElasticNet Logistic Regression<br/>Cell 5.3: XGBoost training + 50 Optuna tuning trials<br/>Cell 5.4: LightGBM training + 50 Optuna tuning trials"]
+    subgraph Model Training and Tuning Pipeline
+        G --> H["🤖 Model Training and Hyperparameter Tuning<br/>Cell 5.1: Evaluate qSOFA clinical baseline<br/>Cell 5.2: Train ElasticNet Logistic Regression<br/>Cell 5.3: XGBoost training + 50 Optuna tuning trials<br/>Cell 5.4: LightGBM training + 50 Optuna tuning trials"]
         H --> I["🤝 Soft-Vote Ensemble Optimization<br/>Cell 5.5b: Grid search best probability weights<br/>Discovers: 45% XGB + 45% LGB + 10% LR"]
-        I --> J["💾 Save Output Artifacts to Disk<br/>Cell 5.5b: Export models & CSVs to artifacts/ dir"]
+        I --> J["💾 Save Output Artifacts to Disk<br/>Cell 5.5b: Export models and CSVs to artifacts/ dir"]
     end
     
-    C --> K["📈 Evaluation & Threshold Calibration"]
+    C --> K["📈 Evaluation and Threshold Calibration"]
     J --> K
     
-    subgraph Evaluation & Calibration Pipeline
-        K --> L["📐 PhysioNet Utility Scorer & Threshold Sweep<br/>Cell 6.1: Define official verbatim reward function<br/>Cell 6.2: Load validation & test prediction curves<br/>Cell 6.4: Validation Sweep tests cutoffs 0.05 to 0.95<br/>Discovers Optimal Clinical Threshold: P ≥ 0.34"]
-        L --> M["🏆 Test Set & Subgroup Verification<br/>Section 7: Compute final Test Utility (0.327)<br/>Stratify results across Hospital A vs Hospital B"]
-        M --> N["🔬 Error Analysis & Live Code Demo<br/>Cell 8.4: Deep-dive 4 clinical case study plots<br/>Cell 10.3-10.5: Live streaming inference demo"]
+    subgraph Evaluation and Calibration Pipeline
+        K --> L["📐 PhysioNet Utility Scorer and Threshold Sweep<br/>Cell 6.1: Define official verbatim reward function<br/>Cell 6.2: Load validation and test prediction curves<br/>Cell 6.4: Validation Sweep tests cutoffs 0.05 to 0.95<br/>Discovers Optimal Clinical Threshold: P ≥ 0.34"]
+        L --> M["🏆 Test Set and Subgroup Verification<br/>Section 7: Compute final Test Utility - 0.327<br/>Stratify results across Hospital A vs Hospital B"]
+        M --> N["🔬 Error Analysis and Live Code Demo<br/>Cell 8.4: Deep-dive 4 clinical case study plots<br/>Cell 10.3-10.5: Live streaming inference demo"]
     end
 ```
 
@@ -45,13 +45,13 @@ How raw hospital measurements transform into actionable predictive features insi
 
 ```mermaid
 flowchart LR
-    Raw["📂 Raw .psv Files<br/>Cell 2.3 & 2.4<br/>(1 row per ICU hour)"] --> Merge["🏥 Load & Tag Hospital Source<br/>Cell 2.4<br/>(Hospital A vs Hospital B)"]
-    Merge --> Fill["🧹 Clinical Imputation<br/>Cell 4.4: Forward Fill (Last Known Value)<br/>Cell 4.5: Median Fill (Start of Stay NaNs)"]
-    Fill --> Window["⏱️ 6-Hour Sliding Window Matrix<br/>Cell 4.6: build_windowed_features()"]
+    Raw["📂 Raw .psv Files<br/>Cell 2.3 and 2.4<br/>1 row per ICU hour"] --> Merge["🏥 Load and Tag Hospital Source<br/>Cell 2.4<br/>Hospital A vs Hospital B"]
+    Merge --> Fill["🧹 Clinical Imputation<br/>Cell 4.4: Forward Fill - Last Known Value<br/>Cell 4.5: Median Fill - Start of Stay NaNs"]
+    Fill --> Window["⏱️ 6-Hour Sliding Window Matrix<br/>Cell 4.6: build_windowed_features"]
     
-    subgraph Engineered Features per Hour T (Cell 4.6)
-        Window --> Vitals["📈 Vital Trends<br/>• _last (Current Value)<br/>• _mean (6h Average)<br/>• _slope (Linear Trend)"]
-        Window --> Labs["🧪 Lab Signals<br/>• _last (Last Measured)<br/>• _miss_rate (Test Order Rate)"]
+    subgraph Engineered Features per Hour T - Cell 4.6
+        Window --> Vitals["📈 Vital Trends<br/>• _last - Current Value<br/>• _mean - 6h Average<br/>• _slope - Linear Trend"]
+        Window --> Labs["🧪 Lab Signals<br/>• _last - Last Measured<br/>• _miss_rate - Test Order Rate"]
     end
 ```
 
@@ -68,10 +68,10 @@ Standard Machine Learning metrics (Accuracy, F1-Score) treat all errors equally.
 
 ```mermaid
 graph LR
-    subgraph Timeline of a Sepsis Patient Stay (Cell 6.3 Visualization)
-        Admission["🏥 ICU Admission<br/>(t = 0)"] --> Optimal["🟢 Optimal Warning Window<br/>(12h to 6h before onset)<br/>Reward: +1.0 Maximum Utility"]
-        Optimal --> Late["🟡 Late Warning Window<br/>(Within 6h of onset or after)<br/>Reward: Drops steadily to 0.0"]
-        Late --> Onset["🔴 Clinical Sepsis Onset<br/>(t_sepsis)"]
+    subgraph Timeline of a Sepsis Patient Stay - Cell 6.3 Visualization
+        Admission["🏥 ICU Admission<br/>t = 0"] --> Optimal["🟢 Optimal Warning Window<br/>12h to 6h before onset<br/>Reward: +1.0 Maximum Utility"]
+        Optimal --> Late["🟡 Late Warning Window<br/>Within 6h of onset or after<br/>Reward: Drops steadily to 0.0"]
+        Late --> Onset["🔴 Clinical Sepsis Onset<br/>t_sepsis"]
     end
 ```
 
@@ -92,11 +92,11 @@ Why we do not use the default Machine Learning probability cutoff of `0.50` in *
 
 ```mermaid
 graph TD
-    Prob["📊 Ensemble Raw Probability<br/>Cell 5.5b Output: P(Sepsis) ∈ [0.0, 1.0]"] --> Sweep{"⚖️ Cell 6.4: Threshold Sweep on Validation Set<br/>Test cutoffs systematically from 0.05 to 0.95"}
+    Prob["📊 Ensemble Raw Probability<br/>Cell 5.5b Output: P Sepsis in range 0.0 to 1.0"] --> Sweep{"⚖️ Cell 6.4: Threshold Sweep on Validation Set<br/>Test cutoffs systematically from 0.05 to 0.95"}
     
-    Sweep -->|Default Cutoff: 0.50| Fail["❌ Extreme Class Imbalance (1.8% Pos)<br/>Model rarely reaches 0.50 probability<br/>Result: High Miss Rate (Utility ≈ 0.08)"]
+    Sweep -->|Default Cutoff: 0.50| Fail["❌ Extreme Class Imbalance - 1.8% Pos<br/>Model rarely reaches 0.50 probability<br/>Result: High Miss Rate - Utility ≈ 0.08"]
     
-    Sweep -->|Optimal Cutoff: 0.34| Win["✅ Calibrated Clinical Utility<br/>Captures deteriorating patients early<br/>Result: Maximized Utility Score (0.341 Val / 0.327 Test)"]
+    Sweep -->|Optimal Cutoff: 0.34| Win["✅ Calibrated Clinical Utility<br/>Captures deteriorating patients early<br/>Result: Maximized Utility Score - 0.341 Val / 0.327 Test"]
 ```
 
 ---
