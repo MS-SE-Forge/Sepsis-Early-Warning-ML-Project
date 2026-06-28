@@ -6,34 +6,28 @@ This document maps out the complete end-to-end data pipeline and decision gates 
 
 ## 1. System Execution Pipeline & Visual Cell Routing
 
-The notebook is architected with a dual-execution path controlled by **Cell 2.2b (`FORCE_RETRAIN`)**. This guarantees instant presentation execution (~60 seconds) while preserving full technical training capability (~7 minutes).
+The notebook is architected with a dual-execution path controlled by **Cell 2.2b (`FORCE_RETRAIN`)**. This horizontal layout gives you an immediate, single-screen overview of the entire system routing without vertical scrolling:
 
 ```mermaid
-graph TD
-    A["📂 Raw Dataset Directories<br/>Cell 2.3: Auto-detect paths - training_setA / setB<br/>Cell 2.4: Load 40,336 patients - ~1.5M hourly rows"] --> B{"⚖️ Cell 2.2b: Run Control Gate<br/>Check FORCE_RETRAIN and Artifact Existence"}
+graph LR
+    A["📂 Raw Dataset<br/>Cell 2.3 & 2.4"] --> B{"⚖️ Cell 2.2b Gate<br/>FORCE_RETRAIN?"}
     
-    B -->|FORCE_RETRAIN = False<br/>and All Files Present| C["⚡ Fast-Load Mode ~60 seconds<br/>Cell 3.0 Centralized Loader: imports pre-trained<br/>.joblib models and predictions.csv instantly"]
-    B -->|FORCE_RETRAIN = True<br/>or Missing Files| D["🔁 Full Training Pipeline ~7 minutes<br/>Execute active machine learning training"]
+    B -->|False: Fast Mode| C["⚡ Fast-Load Mode ~60s<br/>Cell 3.0 Central Loader"]
+    B -->|True: Train Mode| D["🔁 Full Train ~7m<br/>Active ML Training"]
     
-    subgraph Core Preprocessing and Feature Extraction Pipeline
-        D --> E["🧹 Preprocessing and Imputation<br/>Cell 4.2: Tag patient eligibility groups<br/>Cell 4.3: Create binary lab missingness flags<br/>Cell 4.4: Forward-fill vital history per patient<br/>Cell 4.5: Median fill start-of-stay NaNs"]
-        E --> F["⏱️ 6-Hour Sliding Window Engineering<br/>Cell 4.6: build_windowed_features computes rolling<br/>means, linear regression slopes and lab miss rates"]
-        F --> G["🔒 Leakage-Free Patient-Level Split<br/>Cell 4.8: GroupShuffleSplit - 70% Train | 10% Val | 20% Test<br/>Cell 4.9: Assert 0 overlapping patients across splits"]
+    subgraph Preprocessing [🧹 Preprocessing - Section 4]
+        D --> E["Cell 4.2-4.5<br/>Impute & Tag"] --> F["Cell 4.6<br/>6h Windows"] --> G["Cell 4.8<br/>70/10/20 Split"]
     end
     
-    subgraph Model Training and Tuning Pipeline
-        G --> H["🤖 Model Training and Hyperparameter Tuning<br/>Cell 5.1: Evaluate qSOFA clinical baseline<br/>Cell 5.2: Train ElasticNet Logistic Regression<br/>Cell 5.3: XGBoost training + 50 Optuna tuning trials<br/>Cell 5.4: LightGBM training + 50 Optuna tuning trials"]
-        H --> I["🤝 Soft-Vote Ensemble Optimization<br/>Cell 5.5b: Grid search best probability weights<br/>Discovers: 45% XGB + 45% LGB + 10% LR"]
-        I --> J["💾 Save Output Artifacts to Disk<br/>Cell 5.5b: Export models and CSVs to artifacts/ dir"]
+    subgraph Modeling [🤖 Modeling - Section 5]
+        G --> H["Cell 5.1-5.4<br/>XGB / LGB / LR"] --> I["Cell 5.5b<br/>Soft-Vote Mix"] --> J["💾 Save Artifacts<br/>to artifacts/"]
     end
     
-    C --> K["📈 Evaluation and Threshold Calibration"]
+    C --> K["📈 Calibration & Demo"]
     J --> K
     
-    subgraph Evaluation and Calibration Pipeline
-        K --> L["📐 PhysioNet Utility Scorer and Threshold Sweep<br/>Cell 6.1: Define official verbatim reward function<br/>Cell 6.2: Load validation and test prediction curves<br/>Cell 6.4: Validation Sweep tests cutoffs 0.05 to 0.95<br/>Discovers Optimal Clinical Threshold: P ≥ 0.34"]
-        L --> M["🏆 Test Set and Subgroup Verification<br/>Section 7: Compute final Test Utility - 0.327<br/>Stratify results across Hospital A vs Hospital B"]
-        M --> N["🔬 Error Analysis and Live Code Demo<br/>Cell 8.4: Deep-dive 4 clinical case study plots<br/>Cell 10.3-10.5: Live streaming inference demo"]
+    subgraph Evaluation [🏆 Evaluation - Section 6 to 10]
+        K --> L["Cell 6.4 Sweep<br/>Cutoff P ≥ 0.34"] --> M["Section 7 Test<br/>Utility: 0.327"] --> N["Cell 10.3-10.5<br/>Live Demo"]
     end
 ```
 
