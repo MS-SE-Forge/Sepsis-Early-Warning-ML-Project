@@ -19,12 +19,12 @@ project-root/
 │
 ├── main.ipynb                  ← Main notebook (the only file you run)
 │
-├── training_setA/              ← Hospital A patient files (.psv)  ← YOU MUST PROVIDE
+├── input/training_setA/              ← Hospital A patient files (.psv)  ← YOU MUST PROVIDE
 │   ├── p000001.psv
 │   ├── p000002.psv
 │   └── ...
 │
-├── training_setB/              ← Hospital B patient files (.psv)  ← YOU MUST PROVIDE
+├── input/training_setB/              ← Hospital B patient files (.psv)  ← YOU MUST PROVIDE
 │   ├── p000001.psv
 │   ├── p000002.psv
 │   └── ...
