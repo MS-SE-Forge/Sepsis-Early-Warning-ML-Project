@@ -6,28 +6,28 @@ This document maps out the complete end-to-end data pipeline and decision gates 
 
 ## 1. System Execution Pipeline & Visual Cell Routing
 
-The notebook is architected with a dual-execution path controlled by **Cell 2.2b (`FORCE_RETRAIN`)**. This horizontal layout gives you an immediate, single-screen overview of the entire system routing without vertical scrolling:
+The notebook is architected with a dual-execution path controlled by **Cell 2.2b (`FORCE_RETRAIN`)**. This horizontal layout gives you an immediate, single-screen overview of the entire system routing while preserving rich technical details:
 
 ```mermaid
 graph LR
-    A["📂 Raw Dataset<br/>Cell 2.3 & 2.4"] --> B{"⚖️ Cell 2.2b Gate<br/>FORCE_RETRAIN?"}
+    A["📂 Raw Dataset Directories<br/>Cell 2.3: Auto-detect folders<br/>Cell 2.4: Load 40,336 patients"] --> B{"⚖️ Cell 2.2b Run Gate<br/>Check FORCE_RETRAIN<br/>and Artifacts"}
     
-    B -->|False: Fast Mode| C["⚡ Fast-Load Mode ~60s<br/>Cell 3.0 Central Loader"]
-    B -->|True: Train Mode| D["🔁 Full Train ~7m<br/>Active ML Training"]
+    B -->|False: Fast Mode| C["⚡ Fast-Load Mode ~60s<br/>Cell 3.0 Central Loader:<br/>Load saved .joblib models"]
+    B -->|True: Train Mode| D["🔁 Full Training Pipeline ~7m<br/>Execute ML model training"]
     
-    subgraph Preprocessing [🧹 Preprocessing - Section 4]
-        D --> E["Cell 4.2-4.5<br/>Impute & Tag"] --> F["Cell 4.6<br/>6h Windows"] --> G["Cell 4.8<br/>70/10/20 Split"]
+    subgraph Preprocessing [🧹 Preprocessing and Feature Engineering - Section 4]
+        D --> E["Cell 4.2 to 4.5 Imputation<br/>Forward-fill vitals and<br/>Median-fill start NaNs"] --> F["Cell 4.6 Feature Windows<br/>build_windowed_features:<br/>6h Means, Slopes, Miss Rates"] --> G["Cell 4.8 Patient Split<br/>GroupShuffleSplit:<br/>70% Train | 10% Val | 20% Test"]
     end
     
-    subgraph Modeling [🤖 Modeling - Section 5]
-        G --> H["Cell 5.1-5.4<br/>XGB / LGB / LR"] --> I["Cell 5.5b<br/>Soft-Vote Mix"] --> J["💾 Save Artifacts<br/>to artifacts/"]
+    subgraph Modeling [🤖 Model Training and Ensemble - Section 5]
+        G --> H["Cell 5.1 to 5.4 Training<br/>qSOFA Baseline, ElasticNet LR,<br/>XGBoost and LightGBM Optuna"] --> I["Cell 5.5b Ensemble Optimization<br/>Soft-Vote Grid Search Discovers:<br/>45% XGB + 45% LGB + 10% LR"] --> J["💾 Export Saved Artifacts<br/>Cell 5.5b: Save models and<br/>predictions to artifacts/"]
     end
     
-    C --> K["📈 Calibration & Demo"]
+    C --> K["📈 Clinical Utility Evaluation"]
     J --> K
     
-    subgraph Evaluation [🏆 Evaluation - Section 6 to 10]
-        K --> L["Cell 6.4 Sweep<br/>Cutoff P ≥ 0.34"] --> M["Section 7 Test<br/>Utility: 0.327"] --> N["Cell 10.3-10.5<br/>Live Demo"]
+    subgraph Evaluation [🏆 Evaluation and Calibration - Section 6 to 10]
+        K --> L["Cell 6.4 Threshold Sweep<br/>Test cutoffs 0.05 to 0.95<br/>Discovers Peak Cutoff P ≥ 0.34"] --> M["Section 7 Test Evaluation<br/>Final Unseen Test Utility: 0.327<br/>60x Higher than qSOFA"] --> N["Cell 10.3 to 10.5 Live Demo<br/>Stream real patient vital history<br/>Trigger alarm 6 hours early"]
     end
 ```
 
@@ -75,7 +75,7 @@ graph LR
 | **Early True Positive** | Alarm sounds **6 to 12 hours before** sepsis onset | **+1.00** (Maximum Reward) | Provides doctors enough lead time to administer fluids and intravenous antibiotics safely. |
 | **Late True Positive** | Alarm sounds **within 6 hours** of onset or after | **+0.80 down to 0.00** | Better than nothing, but clinical efficacy drops rapidly as organ damage begins. |
 | **False Negative (Miss)**| Patient develops sepsis, but **no alarm** sounds | **0.00** (No Reward) | Failed to protect the patient. |
-| **False Positive (False Alarm)**| Patient never develops sepsis, but **alarm sounds** | **-0.05** (Active Penalty) | Contributes to "alarm fatigue," causing staff to ignore future monitor alerts. |
+| **False Positive (False Alarm)**| Patient never develops sepsis, but **-0.05** (Active Penalty) | Contributes to "alarm fatigue," causing staff to ignore future monitor alerts. |
 | **True Negative** | Stable patient, **no alarm** sounds | **0.00** (Neutral) | Correct baseline system behavior. |
 
 ---
