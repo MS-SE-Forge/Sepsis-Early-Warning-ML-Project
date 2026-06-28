@@ -1,6 +1,6 @@
 # 📊 Data Flow & Decision-Making Architecture (Visual Cell-Annotated)
 
-This document maps out the complete end-to-end data pipeline and decision gates for the Early Sepsis Warning project. Every architectural block is explicitly annotated with its **exact visual notebook heading** (e.g., **Cell 2.2b**, **Cell 4.6**, **Cell 5.3**) following your notebook's exact structure.
+This document maps out the complete end-to-end data pipeline and decision gates for the Early Sepsis Warning project. Every single architectural block across all four diagrams is explicitly annotated with its **exact visual notebook heading** (e.g., **Cell 2.2b**, **Cell 4.6**, **Cell 5.3**, **Cell 6.4**) following your notebook's exact structure.
 
 ---
 
@@ -39,7 +39,69 @@ graph TD
 
 ---
 
-## 2. Visual Cell-by-Cell Detailed Execution Summary
+## 2. Preprocessing & Feature Engineering Flow (Annotated)
+
+How raw hospital measurements transform into actionable predictive features inside **Section 4**:
+
+```mermaid
+flowchart LR
+    Raw["📂 Raw .psv Files<br/>Cell 2.3 & 2.4<br/>(1 row per ICU hour)"] --> Merge["🏥 Load & Tag Hospital Source<br/>Cell 2.4<br/>(Hospital A vs Hospital B)"]
+    Merge --> Fill["🧹 Clinical Imputation<br/>Cell 4.4: Forward Fill (Last Known Value)<br/>Cell 4.5: Median Fill (Start of Stay NaNs)"]
+    Fill --> Window["⏱️ 6-Hour Sliding Window Matrix<br/>Cell 4.6: build_windowed_features()"]
+    
+    subgraph Engineered Features per Hour T (Cell 4.6)
+        Window --> Vitals["📈 Vital Trends<br/>• _last (Current Value)<br/>• _mean (6h Average)<br/>• _slope (Linear Trend)"]
+        Window --> Labs["🧪 Lab Signals<br/>• _last (Last Measured)<br/>• _miss_rate (Test Order Rate)"]
+    end
+```
+
+### Key Preprocessing Decisions
+* **Why Forward-Fill (Cell 4.4)?** In an ICU setting, physiological variables do not change instantly. Carrying the last measured heart rate or blood pressure forward reflects the true clinical assumption until a new measurement is taken.
+* **Why Missingness Rates (Cell 4.3 & 4.6)?** Lab tests (like Lactate or Blood Cultures) are not ordered randomly. A sudden cluster of lab orders indicates doctor concern. By calculating the 6-hour missingness rate (`_miss_rate`), the AI learns to treat the *presence or absence of a test* as a diagnostic signal.
+* **Why Slopes (Cell 4.6)?** A patient with a static Heart Rate of 95 bpm is stable. A patient whose Heart Rate rose from 70 to 95 over the last 6 hours (`positive slope`) is actively deteriorating. Slopes capture momentum before static thresholds break.
+
+---
+
+## 3. Clinical Utility Decision Matrix (Cell 6.1 & 6.3)
+
+Standard Machine Learning metrics (Accuracy, F1-Score) treat all errors equally. In medical monitoring, a late warning is fatal, and excessive false alarms cause doctor burnout. We evaluate models using the official clinical utility reward function embedded in **Cell 6.1**:
+
+```mermaid
+graph LR
+    subgraph Timeline of a Sepsis Patient Stay (Cell 6.3 Visualization)
+        Admission["🏥 ICU Admission<br/>(t = 0)"] --> Optimal["🟢 Optimal Warning Window<br/>(12h to 6h before onset)<br/>Reward: +1.0 Maximum Utility"]
+        Optimal --> Late["🟡 Late Warning Window<br/>(Within 6h of onset or after)<br/>Reward: Drops steadily to 0.0"]
+        Late --> Onset["🔴 Clinical Sepsis Onset<br/>(t_sepsis)"]
+    end
+```
+
+### The Reward / Penalty Rulebook (Cell 6.1 Logic)
+| Clinical Scenario | System Action | Utility Reward / Penalty | Interpretation |
+|---|---|---|---|
+| **Early True Positive** | Alarm sounds **6 to 12 hours before** sepsis onset | **+1.00** (Maximum Reward) | Provides doctors enough lead time to administer fluids and intravenous antibiotics safely. |
+| **Late True Positive** | Alarm sounds **within 6 hours** of onset or after | **+0.80 down to 0.00** | Better than nothing, but clinical efficacy drops rapidly as organ damage begins. |
+| **False Negative (Miss)**| Patient develops sepsis, but **no alarm** sounds | **0.00** (No Reward) | Failed to protect the patient. |
+| **False Positive (False Alarm)**| Patient never develops sepsis, but **alarm sounds** | **-0.05** (Active Penalty) | Contributes to "alarm fatigue," causing staff to ignore future monitor alerts. |
+| **True Negative** | Stable patient, **no alarm** sounds | **0.00** (Neutral) | Correct baseline system behavior. |
+
+---
+
+## 4. Threshold Calibration Gate (Cell 6.4)
+
+Why we do not use the default Machine Learning probability cutoff of `0.50` in **Cell 6.4**:
+
+```mermaid
+graph TD
+    Prob["📊 Ensemble Raw Probability<br/>Cell 5.5b Output: P(Sepsis) ∈ [0.0, 1.0]"] --> Sweep{"⚖️ Cell 6.4: Threshold Sweep on Validation Set<br/>Test cutoffs systematically from 0.05 to 0.95"}
+    
+    Sweep -->|Default Cutoff: 0.50| Fail["❌ Extreme Class Imbalance (1.8% Pos)<br/>Model rarely reaches 0.50 probability<br/>Result: High Miss Rate (Utility ≈ 0.08)"]
+    
+    Sweep -->|Optimal Cutoff: 0.34| Win["✅ Calibrated Clinical Utility<br/>Captures deteriorating patients early<br/>Result: Maximized Utility Score (0.341 Val / 0.327 Test)"]
+```
+
+---
+
+## 5. Visual Cell-by-Cell Detailed Execution Summary
 
 Use this exact mapping to match your presentation points directly to the visual markdown headers in your notebook:
 
@@ -82,3 +144,20 @@ Use this exact mapping to match your presentation points directly to the visual 
 * **Cells 8.1–8.4 (Error Case Studies)**: Plots 4 distinct patient trajectories: Success (early alert), Miss (blunted fever), False Alarm (chronic hypertension), and Structural Limit (patient arrives septic on Hour 1).
 * **Cell 9.1 (Conclusion Table)**: Summarizes primary findings answering research question without recomputing.
 * **Cells 10.1–10.5 (Live Demo)**: Loads saved models fresh. Streams an unseen test patient's hourly vital signs. Shows ensemble probability climbing across `0.34` threshold at Hour 18, triggering a live alert **6 hours early**.
+
+---
+
+## 6. Project Dependencies & Technical Roles
+
+Installed via **Cell 2.1** and imported in **Cell 2.2**, each package plays a vital, specialized role in executing the clinical pipeline:
+
+| Library / Package | Version | Technical Role & Usage in Notebook |
+|---|---|---|
+| **`pandas`** | Core | Data manipulation, tabular slicing, groupby operations, forward/median clinical imputation (**Cell 4.4, 4.5**), and vectorized 6-hour rolling aggregations (**Cell 4.6**). |
+| **`numpy`** | Core | High-performance numerical arrays, missingness calculations, and linear polynomial regression (`np.polyfit`) to extract vital trajectory deterioration slopes (**Cell 4.6**). |
+| **`scikit-learn`** | Core | Provides `GroupShuffleSplit` for leakage-free patient separation (**Cell 4.8**), `LogisticRegression` with ElasticNet regularization (**Cell 5.2**), and evaluation metrics (`roc_auc_score`, `average_precision_score`). |
+| **`xgboost`** | Latest | Extreme Gradient Boosting tree algorithm (**Cell 5.3**). Models complex non-linear vital interactions and tackles extreme 1.8% class imbalance using the `scale_pos_weight` hyperparameter. |
+| **`lightgbm`** | Latest | Light Gradient Boosting Machine (**Cell 5.4**). Histogram-based, leaf-wise tree growth algorithm that complements XGBoost and excels at recognizing sparse lab missingness patterns. |
+| **`optuna`** | Latest | Automated hyperparameter tuning framework (**Cell 5.3, 5.4**). Uses Tree-structured Parzen Estimators (Bayesian optimization) across 50 trials to tune tree depth, learning rates, and L1/L2 regularization. |
+| **`joblib`** | Core | Object serialization library (**Cell 3.0, 5.5b**). Saves and loads trained `.joblib` models and ensemble weights instantaneously, powering the 60-second Fast-Load presentation mode. |
+| **`matplotlib` & `seaborn`** | Core | Clinical visualization engine. Generates exploratory charts (**Cell 2.5–2.7**), threshold calibration sweep curves (**Cell 6.4**), precision-recall graphs, and the 4 clinical error case studies (**Cell 8.4**). |
