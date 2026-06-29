@@ -110,7 +110,7 @@ Scroll through **Cells 5.1 to 5.5b**, explain **Cell 5.6 (Feature Importances)**
 ### 👤 Speaker 4: Results, Findings & Live Demonstration (4:30 — 6:15)
 
 #### 🎬 Stage Cue:
-Point to the **Section 7 Test Table**, walk through the **Cell 8.4 Error Trajectory Figures**, highlight **Cell 9.1 Conclusion Summary**, and execute/stream **Cells 10.1 to 10.5** showing the alarm firing at Hour 18.
+Point to the **Section 7 Test Table**, walk through **Cells 8.1 to 8.3** leading into the **Cell 8.4 Error Trajectory Figures**, highlight **Cell 9.1 Conclusion Summary**, and execute/stream **Cells 10.1 to 10.5** showing the live alarm firing at Hour 18.
 
 #### 🗣️ Word-for-Word Spoken Script:
 > "Thank you, Member 3. Locking our calibrated 0.34 threshold, we evaluated the Ensemble on the completely unseen 20% Test set in **Section 7**.
@@ -118,17 +118,24 @@ Point to the **Section 7 Test Table**, walk through the **Cell 8.4 Error Traject
 > *(Point to Section 7 Output Table)*
 > Here are our definitive project results: Our calibrated ensemble achieved an official Test Clinical Utility Score of **0.327** and an AUPRC of **0.098**—outperforming the hospital qSOFA baseline by **over 60-fold**! Most importantly, our findings confirm the system gives ICU doctors a median advance warning lead time of **6.0 full hours** before sepsis onset, performing consistently across both Hospital A and Hospital B.
 > 
-> *(Highlight Figures in Cells 8.1 to 8.4 and Table in Cell 9.1)*
-> In **Cells 8.1 through 8.4**, our visual case studies uncovered a critical clinical finding: roughly **25% of septic patients arrive at the hospital already in septic shock on Hour 1**. It is structurally impossible for any monitor to give a 6-hour advance warning for a patient arriving already septic! Being transparent about this explains why the theoretical utility ceiling in ICUs is ~0.65, not 1.0. **Cell 9.1** summarizes these answers neatly.
+> *(Highlight Cells 8.1 to 8.4 and Table in Cell 9.1)*
+> In **Cells 8.1 through 8.3**, we load predictions and construct our evaluation scoring diagrams. Then in **Cell 8.4**, our visual case studies uncovered a critical clinical finding: roughly **25% of septic patients arrive at the hospital already in septic shock on Hour 1**. It is structurally impossible for any monitor to give a 6-hour advance warning for a patient arriving already septic! Being transparent about this explains why the theoretical utility ceiling in ICUs is ~0.65, not 1.0. **Cell 9.1** summarizes these final answers neatly.
 > 
-> *(Execute Live Stream in Cells 10.1 to 10.5)*
-> Finally, look at our live stream demonstration in **Cells 10.3 and 10.4**. Watch as we stream an unseen patient's vitals hour-by-hour: everything appears stable until Hour 18, where rising vital sign slopes push our ensemble probability across the 0.34 threshold. The system triggers a live alert **exactly 6 hours before** clinical onset occurs at Hour 24! Thank you judges, we welcome your questions."
+> *(Walk through Cells 10.1 to 10.5)*
+> Finally, we bring our code to life in Section 10. In **Cells 10.1 and 10.2**, we instantly load saved models and select 6 demo patients. In **Cells 10.3 and 10.4**, our streaming engine runs live inference. Look at the probability trajectory plot in **Cell 10.5**: watch as the unseen patient's vitals appear stable until Hour 18, where rising vital sign slopes push our ensemble probability across the 0.34 threshold. The system triggers a live alert **exactly 6 hours before** clinical onset occurs at Hour 24! Thank you judges, we welcome your questions."
 
 #### 🔬 Speaker 4 Cell-by-Cell Commentary Guide:
 * **Section 7 (Test Evaluation Table)**: Evaluates ensemble on unseen Test set at `0.34` cutoff. Official Test Utility: **`0.327`** (60x higher than qSOFA). Outputs hospital subgroup comparison.
-* **Cells 8.1–8.4 (Error Case Trajectory Figures)**: Visualizes 4 distinct patient trajectories: Success (early alert), Miss (blunted fever), False Alarm (hypertension), and Structural Limit (patient arrives septic on Hour 1).
-* **Cell 9.1 (Conclusion Summary Table)**: Summarizes final research answers without recomputing.
-* **Cells 10.1–10.5 (Live Demo Walkthrough)**: Loads saved models fresh. Streams an unseen test patient's hourly vital signs. Shows ensemble probability climbing across `0.34` threshold at Hour 18, triggering a live alert **6 hours early**.
+* **Cell 8.1 (Load test predictions & threshold)**: Fast-loads test evaluation data and cutoff artifacts.
+* **Cell 8.2 (Find four case study patients)**: Programmatically identifies representative test patients for Success, Miss, False Alarm, and Structural Limit.
+* **Cell 8.3 (Utility scoring diagram)**: Visualizes reward/penalty windows across patient stay timelines.
+* **Cell 8.4 (Four case study plots)**: Generates 4 trajectory figures proving ~25% arrive septic on Hour 1.
+* **Cell 9.1 (Final results summary table)**: Loads pre-computed answers to primary research questions without recomputation.
+* **Cell 10.1 (Load saved models)**: Instantly loads `xgb`, `lgb`, `lr`, and ensemble weights into memory.
+* **Cell 10.2 (Select 6 demo patients)**: Extracts 2 unseen test patients from each eligibility group.
+* **Cell 10.3 (LIVE inference)**: Executes genuine real-time model predictions across streaming vital signs.
+* **Cell 10.4 (Show live predictions)**: Displays tabular inference output for first 3 demo patients.
+* **Cell 10.5 (Live probability trajectory plot)**: Graphs live probability crossing the 0.34 cutoff at Hour 18, triggering an alarm **6 hours early**.
 
 ---
 
